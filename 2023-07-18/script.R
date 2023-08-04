@@ -1,19 +1,167 @@
 
+
 # Libraries ---------------------------------------------------------------
 
 library(tidyverse)
 library(ggridges)
+library(showtext)
+library(viridis)
+library(ggtext)
+library(paletteer)
+
 
 # Load Data ---------------------------------------------------------------
 
-df <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-07-18/detectors.csv')
+df <-
+  readr::read_csv(
+    'https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2023/2023-07-18/detectors.csv'
+  )
 
+# Load Fonts and Icons ----------------------------------------------------
+
+font_add(family = "fa-brands", regular = "/Users/tyleroldham/Library/Fonts/Font Awesome 6 Brands-Regular-400.otf")
+font_add(family = "fa-solid", regular = "/Users/tyleroldham/Documents/Data Viz Projects/TidyTuesday/fonts/Font Awesome 6 Free-Solid-900.otf")
+font_add(family = "fa-regular", regular = "/Users/tyleroldham/Documents/Data Viz Projects/TidyTuesday/fonts/Font Awesome 6 Free-Regular-400.otf")
+
+font_add_google(name = "Cormorant Garamond")
+
+font_add_google(name = "Montserrat")
+
+heading_font <- "Cormorant Garamond"
+p_font <- "Montserrat"
+
+showtext_auto()
+
+TEXT_COLOR <- "gray10"
+BACKGROUND_COLOR <- "#f5f5f5"
+
+space <-
+  paste0("<span style='color:", BACKGROUND_COLOR, "'>-</span>")
+
+folder_icon <-
+  paste0("<span style='font-family:fa-solid;color:",
+         TEXT_COLOR,
+         "'>&#xf07c;</span>")
+
+copyright_icon <-
+  paste0("<span style='font-family:fa-regular;color:",
+         TEXT_COLOR,
+         "'>&#x00A9;</span>")
+
+github_icon <-
+  paste0("<span style='font-family:fa-brands;color:",
+         TEXT_COLOR,
+         "'>&#xf09b;</span>")
+# Set Theme ---------------------------------------------------------------
+
+theme_proj <- function() {
+  theme(
+    axis.text = element_text(family = p_font, size = 22),
+    axis.text.y = element_text(margin = margin(l = 20)),
+    axis.line.x = element_line(linewidth = .3),
+    axis.ticks.x = element_line(linewidth = .3),
+    axis.ticks.y = element_line(linewidth = .3, color = "grey75"),
+    axis.title = element_text(family = p_font,
+                              color = TEXT_COLOR),
+    axis.title.x = element_text(
+      hjust = 0.5,
+      vjust = 0.5,
+      size = 22,
+      margin = margin(t = 10),
+      lineheight = 0.5
+    ),
+    axis.title.y = element_text(
+      hjust = 0.5,
+      vjust = 0.5,
+      size = 22,
+      margin = margin(r = 10, l = 20)
+    ),
+    
+    legend.position = "right",
+    legend.text = element_text(family = p_font, color = TEXT_COLOR),
+    legend.title = element_text(family = p_font,
+                                color = TEXT_COLOR),
+    legend.title.align = 0,
+    
+    panel.grid.major = element_line(
+      linewidth = .3,
+      linetype = "dashed",
+      color = "grey75"
+    ),
+    panel.grid.minor = element_blank(),
+    
+    plot.title = element_text(
+      family = heading_font,
+      size = 48,
+      hjust = 0
+    ),
+    plot.subtitle = element_markdown(
+      margin = margin(b = 20, t = 5),
+      color = TEXT_COLOR,
+      family = p_font,
+      size = 20,
+      lineheight = 0.75,
+      hjust = 0
+    ),
+    plot.caption  = element_markdown(
+      margin = margin(t = 15),
+      family = p_font,
+      hjust = 0.5,
+      size = 16
+    ),
+    plot.background = element_rect(fill = BACKGROUND_COLOR, color = NA),
+    plot.margin = margin(20, 40, 20, 0),
+    
+    strip.text = element_text(
+      family = p_font,
+      margin = margin(b = 10),
+      size = 22
+    ),
+    strip.background = element_rect(fill = NA)
+  )
+}
 
 # Visualize -----------------------------------------------------------------
 
+# Define a custom labeller function
+custom_labeller <-
+  as_labeller(c(Human = "Human Writer", AI = "AI Writer"))
+
 # Create the ridgeline plot, facetted by kind
 ggplot(df, aes(x = .pred_AI, y = detector, fill = detector)) +
-  geom_density_ridges() +
-  facet_grid(kind ~ .) +
-  labs(x = ".pred_AI", y = "Detector", title = "Ridgeline plot of .pred_AI distributions grouped by detector") +
-  theme_ridges()  # make it pretty!
+  geom_density_ridges(bandwidth = 0.07) +
+  facet_wrap(fct_rev(kind) ~ ., labeller = custom_labeller) +
+  scale_x_continuous(breaks = c(0, 0.5, 1)) +
+  coord_cartesian(expand = TRUE) +
+  scale_fill_paletteer_d("khroma::bright") +
+  labs(
+    x = "Predicted Probability that Sample\nwas Written by AI",
+    y = "Detector",
+    title = "How Accurate is Each GPT Detector?",
+    subtitle = "GPT plagiarism is a <b>looming threat</b> to the effectiveness of our education<br>system. While we should embrace teaching students the tools for their<br>future, it's equally important that students learn effective writing and<br>communication skills. To that end, many institutions are investing in<br>GPT detection services to catch <b>academic dishonesty. </b> But with such a<br>saturated market, which detector should they use?",
+    caption = paste0(
+      folder_icon,
+      space,
+      "simonpcouch/detectors",
+      space,
+      space,
+      github_icon,
+      space,
+      "toldham2",
+      space,
+      space,
+      copyright_icon,
+      space,
+      "www.tyleroldham.com"
+    )
+  ) +
+  theme_ridges() +
+  theme_proj() +
+  theme(
+    legend.position = "none",
+    axis.ticks.y = element_blank(),
+    axis.title.y = element_blank(),
+    axis.title = element_text(face = "bold", color = "gray25"),
+  )
+
+alt_text <- "Two side-by-side ridgeline plots of different GPT detectors' accuracies where most of them have many errors in detecting human vs AI writing."

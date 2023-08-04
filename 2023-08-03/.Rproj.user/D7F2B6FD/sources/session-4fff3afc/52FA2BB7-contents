@@ -1,0 +1,287 @@
+
+
+
+
+# Libraries ---------------------------------------------------------------
+
+library(tidyverse)
+library(showtext)
+library(ggtext)
+library(paletteer)
+library(maps)
+library(ggpattern)
+library(tidyr)
+
+
+# Load df ---------------------------------------------------------------
+
+df <-
+  readr::read_csv(
+    '/Users/tyleroldham/Documents/GitHub/TidyTuesday/2023-08-03/state_name_etymology.csv'
+  )
+
+# Load Fonts and Icons ----------------------------------------------------
+
+font_add(family = "fa-brands", regular = "/Users/tyleroldham/Library/Fonts/Font Awesome 6 Brands-Regular-400.otf")
+font_add(family = "fa-solid", regular = "/Users/tyleroldham/Documents/df Viz Projects/TidyTuesday/fonts/Font Awesome 6 Free-Solid-900.otf")
+font_add(family = "fa-regular", regular = "/Users/tyleroldham/Documents/df Viz Projects/TidyTuesday/fonts/Font Awesome 6 Free-Regular-400.otf")
+
+font_add_google(name = "Cormorant Garamond")
+
+font_add_google(name = "Montserrat")
+
+heading_font <- "Cormorant Garamond"
+p_font <- "Montserrat"
+
+showtext_auto()
+
+TEXT_COLOR <- "gray10"
+BACKGROUND_COLOR <- "#f5f5f5"
+
+space <-
+  paste0("<span style='color:", BACKGROUND_COLOR, "'>-</span>")
+
+folder_icon <-
+  paste0("<span style='font-family:fa-solid;color:",
+         TEXT_COLOR,
+         "'>&#xf07c;</span>")
+
+copyright_icon <-
+  paste0("<span style='font-family:fa-regular;color:",
+         TEXT_COLOR,
+         "'>&#x00A9;</span>")
+
+github_icon <-
+  paste0("<span style='font-family:fa-brands;color:",
+         TEXT_COLOR,
+         "'>&#xf09b;</span>")
+# Set Theme ---------------------------------------------------------------
+
+theme_proj <- function() {
+  theme(
+    axis.text = element_text(family = p_font, size = 22),
+    axis.text.y = element_text(margin = margin(l = 20)),
+    axis.line.x = element_line(linewidth = .3),
+    axis.ticks.x = element_line(linewidth = .3),
+    axis.ticks.y = element_line(linewidth = .3, color = "grey75"),
+    axis.title = element_text(family = p_font,
+    color = TEXT_COLOR),
+    axis.title.x = element_text(
+      hjust = 0.5,
+      vjust = 0.5,
+      size = 22,
+      margin = margin(t = 10),
+      lineheight = 0.5
+    ),
+    axis.title.y = element_text(
+      hjust = 0.5,
+      vjust = 0.5,
+      size = 22,
+      margin = margin(r = 10, l = 20)
+    ),
+    
+    legend.position = "right",
+    legend.text = element_text(family = p_font, color = TEXT_COLOR),
+    legend.title = element_text(family = p_font,
+                                color = TEXT_COLOR),
+    legend.title.align = 0,
+    
+    panel.grid.major = element_line(
+      linewidth = .3,
+      linetype = "dashed",
+      color = "grey75"
+    ),
+    panel.grid.minor = element_blank(),
+    
+    plot.title = element_text(
+      family = heading_font,
+      size = 48,
+      hjust = 0
+    ),
+    plot.subtitle = element_markdown(
+      margin = margin(b = 20, t = 5),
+      color = TEXT_COLOR,
+      family = p_font,
+      size = 20,
+      lineheight = 0.75,
+      hjust = 0
+    ),
+    plot.caption  = element_markdown(
+      margin = margin(t = 15),
+      family = p_font,
+      hjust = 0.5,
+      size = 16
+    ),
+    plot.background = element_rect(fill = BACKGROUND_COLOR, color = NA),
+    plot.margin = margin(20, 40, 20, 0),
+    
+    strip.text = element_text(
+      family = p_font,
+      margin = margin(b = 10),
+      size = 22
+    ),
+    strip.background = element_rect(fill = NA)
+  )
+}
+
+# Visualize -----------------------------------------------------------------
+
+# Get the map df
+states_map <- map_data("state")
+
+df$region <- tolower(df$state)
+
+# Merge the map df with your df
+merged_df <- dplyr::left_join(x = states_map, y = df, by = "region")
+
+merged_df <- merged_df %>% drop_na(origin)
+
+# Plot the map
+ggplot(merged_df) +
+  geom_polygon(
+    aes(
+      x = long,
+      y = lat,
+      group = group,
+      fill = origin
+    ),
+    color = BACKGROUND_COLOR,
+    linewidth = 0.5
+  ) +
+  coord_fixed(1.3, clip = 'off') +
+  theme_minimal() +
+  theme_proj() +
+  theme(
+    legend.position = "bottom",
+        axis.line.x = element_blank(),
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+    panel.grid.major = element_blank(),
+    plot.margin = margin(20, 80, 20, 80),
+    legend.text = element_text(size = 15),
+    legend.title = element_text(size = 15, face = "bold"),
+    plot.title = element_text(size = 40)
+        ) +
+  scale_fill_manual(name = "Origin",
+                    values = c("European" = "#0072b2",
+                               "Hybrid" = "#009e73",
+                               "Native" = "#f0e442",
+                               "Unknown" = "gray75")) +
+  labs(
+    title = "US State Names by Cultural Origin",
+    subtitle = "The names of US states reflect the hegemony and dominance of early American colonizers. Despite the genocide<br>committed against Native tribes by European settlers, many states have Native or Europeanized-Native (hybrid)<br>names. In fact, 26/50 states have Native or hybrid name origins, most of which were declared official after the removal<br>of local tribes. States acquired from France in the Louisiana Purchase mostly have names with Native origins.<br>Meanwhile, areas ceded to the US by England, Spain, and Mexico overwhelmingly have hybrid or European origins.",
+    caption = paste0(
+      folder_icon,
+      space,
+      "Wikipedia",
+      space,
+      space,
+      github_icon,
+      space,
+      "toldham2",
+      space,
+      space,
+      copyright_icon,
+      space,
+      "www.tyleroldham.com"
+    )
+  ) +
+  annotate(
+    geom = "segment",
+    x = -130, xend = -120, y = 33, yend = 43,
+    colour = "black", linewidth = 0.2
+  ) +
+  annotate(
+    geom = "label",
+    x = -137,
+    y = 33,
+    label = "Oregon's name origin is disputed,\nwith dozens of theories ranging from\nan appropriation of the Abenaki name\nfor the Ohio River (Waregan), to a\ncorruption of the French term for\noregano (origan).",
+    hjust = 0.5,
+    vjust = 0.5,
+    color = TEXT_COLOR,
+    size = 4.5,
+    family = p_font,
+    fill = BACKGROUND_COLOR,
+    lineheight = .5,
+    label.padding = unit(0.35, "lines")
+  )+
+  annotate(
+    geom = "segment",
+    x = -130, xend = -114, y = 46, yend = 43,
+    colour = "black", linewidth = 0.2
+  ) +
+  annotate(
+    geom = "label",
+    x = -140,
+    y = 45,
+    label = 'The name Idaho was originally intended\nfor what is now Colorado, and was\nsupposedly a Shoshone word meaning\n“Gem of the Mountains." However\nCongress reversed it after they discovered\nit was made-up. The name was given to\nIdaho a few years later, after people forgot.',
+    hjust = 0.5,
+    vjust = 0.5,
+    color = TEXT_COLOR,
+    size = 4.5,
+    family = p_font,
+    fill = BACKGROUND_COLOR,
+    lineheight = .5,
+    label.padding = unit(0.35, "lines")
+  ) +
+  annotate(
+    geom = "segment",
+    x = -70.0, xend = -60, y = 42, yend = 46,
+    colour = "black", linewidth = 0.2
+  ) +
+  annotate(
+    geom = "label",
+    x = -50,
+    y = 45,
+    label = 'Connecticut and Massachussets are the only states\nin New England with Native origin, meaning "at the\nlong tidal river" and "near the great little-mountain"\nin the Native Algonquain languages.',
+    hjust = 0.5,
+    vjust = 0.5,
+    color = TEXT_COLOR,
+    size = 4.5,
+    family = p_font,
+    fill = BACKGROUND_COLOR,
+    lineheight = .5,
+    label.padding = unit(0.35, "lines")
+  ) +
+  annotate(
+    geom = "segment",
+    x = -77, xend = -65, y = 41, yend = 38,
+    colour = "black", linewidth = 0.2
+  ) +
+  annotate(
+    geom = "label",
+    x = -55,
+    y = 38,
+    label = '"Penn\'s woods"", after Admiral William Penn,\nthe father of its founder William Penn.\nPennsylvania is the only state that shares\npart of its name with its founder. The name "Penn"\ncomes from the Welsh word for "head."',
+    hjust = 0.5,
+    vjust = 0.5,
+    color = TEXT_COLOR,
+    size = 4.5,
+    family = p_font,
+    fill = BACKGROUND_COLOR,
+    lineheight = .5,
+    label.padding = unit(0.35, "lines")
+  )+
+  annotate(
+    geom = "segment",
+    x = -65, xend = -86.5, y = 30, yend = 35.5,
+    colour = "black", linewidth = 0.2
+  ) +
+  annotate(
+    geom = "label",
+    x = -65,
+    y = 30,
+    label = 'Tennessee gets its name from "Tanasi"\n(in Cherokee: ·èî·éæ·èè), the name of a\nCherokee village; the meaning is unknown.',
+    hjust = 0.5,
+    vjust = 0.5,
+    color = TEXT_COLOR,
+    size = 4.5,
+    family = p_font,
+    fill = BACKGROUND_COLOR,
+    lineheight = .5,
+    label.padding = unit(0.35, "lines")
+  )
